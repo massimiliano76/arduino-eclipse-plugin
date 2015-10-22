@@ -2,11 +2,15 @@ package it.baeyens.arduino.common;
 
 import it.baeyens.arduino.arduino.Serial;
 
+import java.io.File;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Vector;
 
 import org.eclipse.cdt.core.CCorePlugin;
+import org.eclipse.cdt.core.envvar.EnvironmentVariable;
+import org.eclipse.cdt.core.envvar.IContributedEnvironment;
+import org.eclipse.cdt.core.envvar.IEnvironmentVariable;
 import org.eclipse.cdt.core.envvar.IEnvironmentVariableManager;
 import org.eclipse.cdt.core.model.CoreModel;
 import org.eclipse.cdt.core.model.ICElement;
@@ -15,6 +19,7 @@ import org.eclipse.cdt.core.settings.model.ICConfigurationDescription;
 import org.eclipse.cdt.core.settings.model.ICProjectDescription;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
+import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IAdaptable;
@@ -457,7 +462,7 @@ public class Common extends ArduinoInstancePreferences {
 	return outgoing;
     }
 
-    public static Object listLineEndings() {
+    public static String[] listLineEndings() {
 	String outgoing[] = { "none", "CR", "NL", "CR/NL" };
 	return outgoing;
     }
@@ -482,6 +487,8 @@ public class Common extends ArduinoInstancePreferences {
      * 
      * @param project
      *            the project that contains the environment variable
+     * @param configName
+     *            the project configuration to use
      * @param EnvName
      *            the key that describes the variable
      * @param defaultvalue
@@ -491,6 +498,24 @@ public class Common extends ArduinoInstancePreferences {
     static public String getBuildEnvironmentVariable(IProject project, String configName, String EnvName, String defaultvalue) {
 	ICProjectDescription prjDesc = CoreModel.getDefault().getProjectDescription(project);
 	return getBuildEnvironmentVariable(prjDesc.getConfigurationByName(configName), EnvName, defaultvalue);
+    }
+
+    /**
+     * 
+     * Provides the build environment variable based on project and string This method does not add any knowledge.(like adding A.)
+     * 
+     * @param project
+     *            the project that contains the environment variable
+     * 
+     * @param EnvName
+     *            the key that describes the variable
+     * @param defaultvalue
+     *            The return value if the variable is not found.
+     * @return The expanded build environment variable
+     */
+    static public String getBuildEnvironmentVariable(IProject project, String EnvName, String defaultvalue) {
+	ICProjectDescription prjDesc = CoreModel.getDefault().getProjectDescription(project);
+	return getBuildEnvironmentVariable(prjDesc.getDefaultSettingConfiguration(), EnvName, defaultvalue);
     }
 
     /**
@@ -565,13 +590,52 @@ public class Common extends ArduinoInstancePreferences {
     }
 
     /**
+     * The file aduino IDE stores it's preferences in
+     * 
+     * @return
+     */
+    public static File getPreferenceFile() {
+	IPath homPath = new Path(System.getProperty("user.home"));
+	return homPath.append(".arduino").append("preferences.txt").toFile();
+    }
+
+    /**
      * same as getDefaultLibPath but for the hardware folder
      * 
      * @return
      */
     public static String getDefaultPrivateHardwarePath() {
+	if (Platform.getOS().equals(Platform.OS_WIN32)) {
+	    IPath homPath = new Path(System.getProperty("user.dir"));
+	    return homPath.append("Arduino").append("hardware").toString();
+	}
+
 	IPath homPath = new Path(System.getProperty("user.home"));
 	return homPath.append("Arduino").append("hardware").toString();
+
+    }
+
+    public static File getArduinoIdeDumpName(String packageName, String architecture, String boardID) {
+	return getPluginWritePath(ARDUINO_IDE_DUMP__FILE_NAME_PREFIX + packageName + "_" + architecture + "_" + boardID + "_"
+		+ ARDUINO_IDE_DUMP__FILE_NAME_TRAILER);
+    }
+
+    private static File getPluginWritePath(String name) {
+	IWorkspaceRoot myWorkspaceRoot = ResourcesPlugin.getWorkspace().getRoot();
+	File ret = myWorkspaceRoot.getLocation().append(name).toFile();
+	return ret;
+    }
+
+    public static File getWorkspaceRoot() {
+	IWorkspaceRoot myWorkspaceRoot = ResourcesPlugin.getWorkspace().getRoot();
+	File ret = myWorkspaceRoot.getLocation().toFile();
+	return ret;
+    }
+
+    public static void setBuildEnvironmentVariable(IContributedEnvironment contribEnv, ICConfigurationDescription confdesc, String key, String value) {
+	IEnvironmentVariable var = new EnvironmentVariable(key, value);
+	contribEnv.addVariable(var, confdesc);
+
     }
 
 }

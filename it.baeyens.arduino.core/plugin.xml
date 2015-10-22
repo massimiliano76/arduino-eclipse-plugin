@@ -16,7 +16,7 @@
       class="it.baeyens.arduino.toolchain.ArduinoLanguageProvider"
       id="it.baeyens.arduino.languageSettingsProvider"
       name="Arduino Compiler Settings"
-      parameter="${COMMAND} -E -P -v -dD ${INPUTS}"
+      parameter='${COMMAND} -E -P -v -dD "${INPUTS}"'
       prefer-non-shared="true">
 <language-scope id="org.eclipse.cdt.core.gcc"/>
 <language-scope id="org.eclipse.cdt.core.g++"/>
@@ -96,7 +96,7 @@
 	<extension point="org.eclipse.ui.newWizards">
 		<category 
 			id="it.baeyens.arduino.eclipse.newWizards"
-			name="%category.name">
+			name="%category.arduino.name">
 		</category>
 		<wizard
 			id="it.baeyens.arduino.eclipse.NewArduinoSketchWizard"
@@ -116,7 +116,7 @@
     <extension point="org.eclipse.ui.importWizards">
  		<category 
 			id="it.baeyens.arduino.eclipse.importWizards"
-			name="%category.name">
+			name="%category.arduino.name">
 		</category>
       <wizard 
          id="it.baeyens.arduino.Import_Arduino_Libraries" 

@@ -75,16 +75,21 @@ public class Import_Arduino_Libraries_Page extends WizardResourceImportPage {
 	myLibrarySelector.setLayoutData(theGriddata);
 
 	// find the items to add to the list
-	Set<String> allLibraries = ArduinoLibraries.findAllHarwareLibraries(myProject);
+	Set<String> allLibraries = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+	allLibraries.addAll(ArduinoLibraries.findAllHarwareLibraries(myProject));
 	allLibraries.addAll(ArduinoLibraries.findAllUserLibraries(myProject));
 	allLibraries.addAll(ArduinoLibraries.findAllArduinoLibraries(myProject));
 
 	// Get the data in the tree
+	Set<String> allLibrariesAlreadyUsed = ArduinoLibraries.getAllLibrariesFromProject(myProject);
 	myLibrarySelector.setRedraw(false);
 	Iterator<String> iterator = allLibraries.iterator();
 	while (iterator.hasNext()) {
 	    TreeItem child = new TreeItem(myLibrarySelector, SWT.NONE);
-	    child.setText(iterator.next());
+	    String nextLibrary = iterator.next();
+	    child.setText(nextLibrary);
+	    if (allLibrariesAlreadyUsed.contains(nextLibrary))
+		child.setChecked(true);
 	}
 
 	myLibrarySelector.setRedraw(true);
@@ -104,10 +109,14 @@ public class Import_Arduino_Libraries_Page extends WizardResourceImportPage {
     public boolean PerformFinish() {
 	TreeItem selectedTreeItems[] = myLibrarySelector.getItems();
 	Set<String> selectedLibraries = new TreeSet<String>();
+	Set<String> unselectedLibraries = new TreeSet<String>();
 	for (TreeItem CurItem : selectedTreeItems) {
 	    if (CurItem.getChecked())
 		selectedLibraries.add(CurItem.getText());
+	    else
+		unselectedLibraries.add(CurItem.getText());
 	}
+	ArduinoLibraries.removeLibrariesFromProject(myProject, unselectedLibraries);
 	ArduinoLibraries.addLibrariesToProject(myProject, selectedLibraries);
 
 	return true;

@@ -78,6 +78,25 @@ public class ArduinoLibraries {
 	return findAllSubFolders(URIUtil.toPath(ArduinoLibraryURI));
 
     }
+    
+    /**
+     * Removes a set of libraries from a project
+     * 
+     * @param project	the project from which to remove libraries
+     * @param confdesc	the configuration from which to remove libraries
+     * @param libraries set of libraries to remove
+     */
+    public static void removeLibrariesFromProject(IProject project, ICConfigurationDescription confdesc, Set<String> libraries) {
+    	for (String CurItem : libraries) {
+    	    try {
+    			final IFolder folderHandle = project.getFolder(ArduinoConst.WORKSPACE_LIB_FOLDER + CurItem);
+    			folderHandle.delete(true, null);
+    		    } catch (CoreException e) {
+    			Common.log(new Status(IStatus.ERROR, ArduinoConst.CORE_PLUGIN_ID, "Failed to remove library ", e));
+    		    }
+    		}
+    	ArduinoHelpers.removeInvalidIncludeFolders(confdesc);
+    }
 
     public static void addLibrariesToProject(IProject project, ICConfigurationDescription confdesc, Set<String> libraries) {
 	Set<String> hardwareLibraries = findAllHarwareLibraries(project);
@@ -100,7 +119,10 @@ public class ArduinoLibraries {
 		    ArduinoHelpers.addCodeFolder(project, ArduinoConst.WORKSPACE_PATH_VARIABLE_NAME_ARDUINO_LIB, CurItem,
 			    ArduinoConst.WORKSPACE_LIB_FOLDER + CurItem, confdesc);
 		} else {
-		    Common.log(new Status(IStatus.ERROR, ArduinoConst.CORE_PLUGIN_ID, "Thr library " + CurItem + " is not valid for this board."));
+		    // TODO add check whether this is actually a library
+		    // in case of code added via samples the plugin thinks a library needs to be added. However this is not a library but just a
+		    // folder
+		    Common.log(new Status(IStatus.ERROR, ArduinoConst.CORE_PLUGIN_ID, "The library " + CurItem + " is not valid for this board."));
 		}
 	    } catch (CoreException e) {
 		Common.log(new Status(IStatus.ERROR, ArduinoConst.CORE_PLUGIN_ID, "Failed to import library ", e));
@@ -121,8 +143,10 @@ public class ArduinoLibraries {
 	IFolder link = project.getFolder(ArduinoConst.WORKSPACE_LIB_FOLDER);
 	Set<String> ret = new TreeSet<String>();
 	try {
-	    for (IResource curResource : link.members()) {
-		ret.add(curResource.getName());
+	    if (link.exists()) {
+		for (IResource curResource : link.members()) {
+		    ret.add(curResource.getName());
+		}
 	    }
 	} catch (CoreException e) {
 	    // TODO Auto-generated catch block
@@ -158,6 +182,27 @@ public class ArduinoLibraries {
 	ICConfigurationDescription configurationDescriptions[] = projectDescription.getConfigurations();
 	for (ICConfigurationDescription CurItem : configurationDescriptions) {
 	    addLibrariesToProject(project, CurItem, selectedLibraries);
+	}
+	try {
+	    mngr.setProjectDescription(project, projectDescription, true, null);
+	} catch (CoreException e) {
+	    e.printStackTrace();
+	}
+
+    }
+
+    /**
+     * Removes a set of libraries from a project in each project configuration
+     * 
+     * @param project	the project from which to remove libraries
+     * @param libraries set of libraries to remove
+     */
+    public static void removeLibrariesFromProject(IProject project, Set<String> selectedLibraries) {
+	ICProjectDescriptionManager mngr = CoreModel.getDefault().getProjectDescriptionManager();
+	ICProjectDescription projectDescription = mngr.getProjectDescription(project, true);
+	ICConfigurationDescription configurationDescriptions[] = projectDescription.getConfigurations();
+	for (ICConfigurationDescription CurItem : configurationDescriptions) {
+	    removeLibrariesFromProject(project, CurItem, selectedLibraries);
 	}
 	try {
 	    mngr.setProjectDescription(project, projectDescription, true, null);
